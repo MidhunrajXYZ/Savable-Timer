@@ -3,31 +3,18 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+class FloatingAction extends StatefulWidget {
+  const FloatingAction({Key? key}) : super(key: key);
 
   @override
-  _HomePageState createState() => _HomePageState();
+  _FloatingActionState createState() => _FloatingActionState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _FloatingActionState extends State<FloatingAction> {
   final radius = 25.0;
 
   var buttonOffset = const Offset(25, 100);
   late Size scrnSize;
-
-  Offset checks(Offset actual) {
-    var dxNew = actual.dx;
-    var dyNew = actual.dy;
-
-    if (dxNew < radius) dxNew = 25;
-    if (dxNew > scrnSize.width - radius) dxNew = scrnSize.width - 25;
-
-    if (dyNew < radius) dyNew = 25;
-    if (dyNew > scrnSize.height - radius) dyNew = scrnSize.height - 25;
-
-    return Offset(dxNew, dyNew);
-  }
 
   @override
   void didChangeDependencies() {
@@ -38,52 +25,61 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.grey[850],
-      child: Stack(
-        children: [
-          Positioned(
-              left: 200,
-              bottom: 300,
-              child: ElevatedButton(
-                  onPressed: () {}, child: const Text('BUTTON'))),
-          //////
-          AnimatedPositioned(
-            curve: Curves.ease,
-            duration: const Duration(milliseconds: 120),
-            left: buttonOffset.dx - radius,
-            top: buttonOffset.dy - radius,
-            child: GestureDetector(
-              onVerticalDragUpdate: onDrag,
-              onVerticalDragEnd: onDragEnd,
-              child: Container(
-                width: radius * 2,
-                height: radius * 2,
-                clipBehavior: Clip.antiAliasWithSaveLayer,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(200),
-                  color: Colors.blue,
-                ),
-                child: const Center(
-                  child: Text(
-                    '+',
-                    style: TextStyle(color: Colors.white),
+    return IgnorePointer(
+      ignoring: true,
+      child: Material(
+        type: MaterialType.transparency,
+        child: Stack(
+          children: [
+            AnimatedPositioned(
+              curve: Curves.ease,
+              duration: const Duration(milliseconds: 120),
+              // (- radius) is for making the center as pivot
+              left: buttonOffset.dx - radius,
+              top: buttonOffset.dy - radius,
+              child: GestureDetector(
+                onVerticalDragUpdate: onDrag,
+                onVerticalDragEnd: onDragEnd,
+                child: Container(
+                  width: radius * 2,
+                  height: radius * 2,
+                  clipBehavior: Clip.antiAliasWithSaveLayer,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(200),
+                    color: Colors.blue,
+                  ),
+                  child: const Center(
+                    child: Text(
+                      '+',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
+  /// Checks if the button is off limits -> adjust the position and setState.
   void onDrag(details) {
+    var dxNew = details.globalPosition.dx;
+    var dyNew = details.globalPosition.dy;
+
+    if (dxNew < radius) dxNew = 25;
+    if (dxNew > scrnSize.width - radius) dxNew = scrnSize.width - 25;
+
+    if (dyNew < radius) dyNew = 25;
+    if (dyNew > scrnSize.height - radius) dyNew = scrnSize.height - 25;
+
     setState(() {
-      buttonOffset = checks(details.globalPosition);
+      buttonOffset = Offset(dxNew, dyNew);
     });
   }
 
+  /// Checks if the button is not touching any edge -> find ideal edge position -> setState
   void onDragEnd(details) {
     var x = buttonOffset.dx;
     var y = buttonOffset.dy;
